@@ -2667,7 +2667,7 @@ void initADC(uint8_t channel);
 #pragma config FOSC = INTRC_NOCLKOUT
 
 #pragma config WDTE = OFF
-#pragma config PWRTE = OFF
+#pragma config PWRTE = ON
 #pragma config MCLRE = OFF
 #pragma config CP = OFF
 #pragma config CPD = OFF
@@ -2683,8 +2683,7 @@ void initADC(uint8_t channel);
 
 
 
- unsigned int a;
-  uint8_t ADC1;
+ uint8_t ADC1;
   uint8_t ADC2;
 
   uint8_t bandera;
@@ -2708,7 +2707,6 @@ uint8_t d_flag = 0;
 uint8_t c_flag = 0;
 uint8_t unidad = 0;
 uint8_t decena = 0;
-int8_t flag;
 
 
 
@@ -2717,13 +2715,41 @@ int8_t flag;
 void setup (void);
 
 
+
+void main(void) {
+    setup();
+    while(1){
+        if(cont > 15){
+         cont = 0;
+         TXIE = 1;
+        }
+
+        contador_centena = PORTA / 100;
+        decenas_temp = PORTA % 100;
+        contador_decena = decenas_temp / 10;
+        contador_unidad = PORTA % 10;
+
+        if (PORTEbits.RE1 == 1){
+            val_USART = 0;
+            contador = 0;
+            PORTE = 0;
+            u_flag = 1;
+            d_flag = 0;
+            c_flag = 0;
+        }
+    }
+
+}
+
+
+
 void __attribute__((picinterrupt(("")))) isr(void){
 
     if(INTCONbits.RBIF){
         if (PORTBbits.RB0 == 0){
-            PORTD++;
+            PORTA++;
         }else if (PORTBbits.RB1 == 0){
-            PORTD--;
+            PORTA--;
         }
         INTCONbits.RBIF = 0;
     }
@@ -2740,6 +2766,7 @@ void __attribute__((picinterrupt(("")))) isr(void){
 
         if (RCREG == 0x0D){
             PORTD = contador;
+            PORTE = 2;
         }
 
         if (RCREG != 0x0D){
@@ -2814,28 +2841,14 @@ void __attribute__((picinterrupt(("")))) isr(void){
             TXREG = 0x0D;
             guia = 0x00;
         }
-
+        TXIF = 0;
     }
 
 
 
 }
 
-void main(void) {
-    setup();
-    while(1){
-        if(cont > 15){
-         cont = 0;
-         TXIE = 1;
-        }
 
-        contador_centena = PORTD / 100;
-        decenas_temp = PORTD % 100;
-        contador_decena = decenas_temp / 10;
-        contador_unidad = PORTD % 10;
-    }
-
-}
 
 void setup(void){
 
@@ -2845,34 +2858,49 @@ void setup(void){
     OSCCONbits.IRCF0 =1 ;
     OSCCONbits.SCS = 1;
 
-    ANSEL = 0x03;
+    ANSEL = 0x00;
     ANSELH = 0x00;
 
     TRISA = 0x00;
     TRISB = 0x03;
     TRISD = 0;
+    TRISE = 0;
 
     OPTION_REGbits.nRBPU = 0 ;
     WPUB = 0x03;
 
-    PORTA = 0;
+    PORTA = 0x00;
     PORTB = 0x03;
-    PORTD = 0;
+    PORTD = 0x00;
+    PORTE = 0x00;
+
 
 
     INTCONbits.GIE = 1;
     INTCONbits.T0IE = 1;
     INTCONbits.T0IF = 0;
 
-    INTCONbits.RBIE = 1;
 
+    TXSTAbits.SYNC = 0;
+    TXSTAbits.BRGH = 1;
+
+    BAUDCTLbits.BRG16 = 1;
+
+    SPBRG = 207;
+    SPBRGH = 0;
+
+    RCSTAbits.SPEN = 1;
+    RCSTAbits.RX9 = 0;
+    RCSTAbits.CREN = 1;
+
+    TXSTAbits.TXEN = 1;
+
+
+    INTCONbits.RBIE = 1;
+    INTCONbits.RBIF = 0;
 
     IOCB = 0x03;
     INTCONbits.RBIF = 0;
-
-
-
-
 
 
 
@@ -2883,11 +2911,6 @@ void setup(void){
 
 
 
-    INTCONbits.T0IE = 1;
-    INTCONbits.T0IF = 0;
-
-
-    initUSART();
 
 
 

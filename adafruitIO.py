@@ -41,6 +41,25 @@ root.title("     COMUNICACION SERIAL Y ADAFRUIT    ")
 root.geometry('400x400')
 
 
+#extraído de https://www.geeksforgeeks.org/python-program-to-convert-a-list-to-string/
+
+# Python program to convert a list to string
+# Function to convert
+def listToString(s):
+
+    # initialize an empty string
+    str1 = ""
+
+    # traverse in the string
+    for ele in s:
+        str1 += ele
+
+    # return string
+    return str1
+
+
+
+
 #extraido de https://www.geeksforgeeks.org/on-off-toggle-button-switch-in-tkinter/
 is_on = True
 adc_value = 0
@@ -136,38 +155,117 @@ my_label1.pack(pady = 5)
 Button(root, text = 'Select color', command=choose_color).pack(pady = 5)
 
 
+
+
+var1 = [0,0,0]
+
 #extraído de https://es.stackoverflow.com/questions/369312/python-ejecutar-script-cada-cierto-tiempo-y-al-mismo-tiempo-ejecutar-lo-que-qued
 def ejecucion_horaria(segundos):
+    global var1
     """
     Este es un thread con parametros.
-    
     @param segundos: Ejecuta un print cada tantos segundos. 
     """
-    #print("Leyendo el puerto serial")
     while(1):
-        print("Leyendo el puerto serial")
+        
+        #print("Leyendo el puerto serial")
         #ABRIR UNA CONEXION SERIAL
-        puerto.open()
-        time.sleep(segundos)
-        rawString = puerto.readline()
-        print(rawString)
+        #puerto.open()
+        #time.sleep(segundos)
+        n=0
+        flag = False
+        flag1=False
+        while(flag == False):
+            var = puerto.read().decode('ascii')
+            if var == '\r':
+                flag = True
+            if (flag):
+                while(n<3):
+                    var = puerto.read().decode('ascii')
+                    var_temp = var
+                    var1 [n] = var_temp   
+                    n = n+1
+                    flag = False
+                    flag1 = True
+        
         #puerto.close()
         #puerto.open()
+        #time.sleep(segundos)
+        #puerto.write(b'10')
+        
+
+def Convert(string):
+    list1=[]
+    list1[:0]=string
+    return list1
+
+
+
+def contadorAdafruit(segundos):
+    global var1
+
+    while(1):
         time.sleep(segundos)
-        puerto.write(b'10')
-        puerto.close()
+        #Analog Feed
+        analog_feed = aio.feeds('contador')
+        aio.send_data(analog_feed.key, int(listToString(var1)))
+        print(int(listToString(var1)))
+        
+        
+        #time.sleep(0.1)
+        #puerto.write(bytes([int(b[0])]).)
+        #time.sleep(0.1)
+        #puerto.write(bytes([int(b[1])]))
+        #time.sleep(0.1)
+        #puerto.write(bytes([13]))
+        #time.sleep(0.1)
+        
+        #for i in b:
+          #  puerto.write(hex(int(i)).encode('ascii'))
+            #print(bytes([int(i)]))
+            #puerto.write(bytes([int(i)]))
+        #puerto.write(bytes([13]))
+        #puerto.write(0x0D)
+        #puerto.write(b)
+        #puerto.write((analog_data.value).encode()+b'\r')
+        
+def valueAdafruit(segundos):
+    while(1):
+        
+        analog_feed = aio.feeds('value')
+        analog_data = aio.receive(analog_feed.key)
+        mystring =str(int(analog_data.value))
+            
+        b = (Convert(mystring))
+        
+        for i in b:
+            time.sleep(segundos)
+            puerto.write((str(i)).encode('ascii'))
+
+        time.sleep(segundos)
+        puerto.write((str('\r')).encode('ascii'))
 
 # Aqui creamos el thread.
 # El primer argumento es el nombre de la funcion que contiene el codigo.
 # El segundo argumento es una lista de argumentos para esa funcion .
 # Ojo con la coma al final!
 
-hilo = threading.Thread(target=ejecucion_horaria, args=(1,))
-hilo.start()   # Iniciamos la ejecución del thread,
 
+def init_conection():
+    hilo = threading.Thread(target=ejecucion_horaria, args=(1,))
+    hilo.start()   # Iniciamos la ejecución del thread,
+
+    hilo2 = threading.Thread(target=contadorAdafruit, args=(1.5,))
+    hilo2.start()   # Iniciamos la ejecución del thread,
+
+    hilo3 = threading.Thread(target=valueAdafruit, args=(0.6,))
+    hilo3.start()   # Iniciamos la ejecución del thread,
+
+
+Button(root, text = 'Conexion Serial', command=init_conection).pack(pady = 10)
 
 
 root.mainloop()
 
-
+puerto.close()
     
