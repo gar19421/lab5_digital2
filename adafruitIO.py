@@ -151,6 +151,10 @@ def ejecucion_horaria(segundos):
         time.sleep(segundos)
         rawString = puerto.readline()
         print(rawString)
+        #puerto.close()
+        #puerto.open()
+        time.sleep(segundos)
+        puerto.write(b'10')
         puerto.close()
 
 # Aqui creamos el thread.
